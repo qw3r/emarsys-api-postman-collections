@@ -41,28 +41,22 @@ Prerequisites:
 - [Node.js](https://nodejs.org/) — if not already installed, mise will install it automatically
 
 Steps:
-1. Clone or download this repository
-1. Run the setup task:
+1. Clone or download this repository 
+2. Run the setup task:
     ```bash
     mise run setup-bruno
     ```
-    This generates the `bruno/` folder with all requests, environments, and pre-configured OAuth2 settings. It also creates `.env.<environment>` files where you can store your credentials.
+    This generates the `bruno/` folder with all requests, environments, and pre-configured OAuth2 settings.
 
-1. Fill in your `OIDC_ClientId` and `OIDC_Secret` in the appropriate `.env.*` file(s) under `bruno/`:
-    - `.env.Emarsys EU Production`
-    - `.env.Emarsys EU Staging`
-    - `.env.Emarsys US1 Production`
-    - `.env.Emarsys US1 Staging`
-
-1. Open Bruno and click **"Open Collection"**, then select the `bruno/` directory
-
-1. Select the environment matching your emarsys suite instance from the environment dropdown in Bruno's sidebar 
+3. Open Bruno and click **"Open Collection"**, then select the `bruno/` directory 
+4. Select the environment matching your Emarsys suite instance from the environment dropdown in Bruno's sidebar 
+5. Fill in your `OIDC_ClientId` and `OIDC_Secret` in the environment's secret variables (Bruno stores these securely in its internal app data)
 
 > [!NOTE]
 > If you are using [SAP Cloud Identities](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials#openid-connect-sap-cloud-identity) to manage your Emarsys API credentials, you will need to update the `OIDC_TokenUrl` variable in the Bruno environment settings.
 
 > [!TIP]
-> You can re-run `mise run setup-bruno` at any time to update the collection from the Postman source. Your `.env.*` files with credentials will be preserved.
+> You can re-run `mise run setup-bruno` at any time to update the collection from the Postman source.
 
 
 ## Using with Postman
@@ -81,19 +75,18 @@ Steps:
  
 ### Setting up your API user in Postman
 
-1. In Postman, click on the folder for the Emarsys API collection, then select the Authorization tab
-1. Scroll down to the "Configure New Token" section where you will see red text in the boxes for Client ID and Client Secret
+1. In Postman, click on the folder for the Emarsys API collection, then select the Authorization tab 
+2. Scroll down to the "Configure New Token" section where you will see red text in the boxes for Client ID and Client Secret
 ![The program Postman, with the Authorization configuration panel open for the collection called "Emarsys - Suite and Sales APIs - V3. There is a large red circle around the parameters for Client ID and Client Secret, which highlights the red text {{OIDC_ClientID}} and {{OIDC_Secret}}, respectively."](./readme-images/postman-oauth-configuration.png)
-1. Hover your mouse over the red text for {{OIDC_ClientID}} to see the options of where to store this variable. Click the Environment section to save the variable. If you see text that says "No environment selected", click "Create One" and give it a name like "Emarsys environment"
+3. Hover your mouse over the red text for {{OIDC_ClientID}} to see the options of where to store this variable. Click the Environment section to save the variable. If you see text that says "No environment selected", click "Create One" and give it a name like "Emarsys environment" 
+![The program Postman, with the Authorization configuration panel open for the collection called "Emarsys - Suite and Sales APIs - V3. That page is scrolled to view the parameters for Client ID and Client Secret, with placeholder text of {{OIDC_ClientID}} and {{OIDC_Secret}}. Above those fields is a dialog window that says "add variable to" with options for Environment, Collection, Globals, and Vault. There is a large red circle around the option "Create One" next to the Environment option."](./readme-images/postman-configure-new-environment.png)
+4. In the "Enter Value" checkbox, enter the value you saved from the Emarsys API user creation screen. Do this for Client ID and Client Secret. The text for each will turn from red to blue once it's configured correctly
+    1. ***NOTE*** If you are using [SAP Cloud Identities](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials#openid-connect-sap-cloud-identity) to manage your Emarsys API credentials, you will need to replace the Access Token URL as well 
+5. Scroll to the bottom of the window and click the Orange "Get New Access Token" button. Postman will take a moment to make sure your credentials work, then report it was successful. Click "Proceed" on this window, then click "Use Token"
+6. Your credentials are now configured!
 
-    ![The program Postman, with the Authorization configuration panel open for the collection called "Emarsys - Suite and Sales APIs - V3. That page is scrolled to view the parameters for Client ID and Client Secret, with placeholder text of {{OIDC_ClientID}} and {{OIDC_Secret}}. Above those fields is a dialog window that says "add variable to" with options for Environment, Collection, Globals, and Vault. There is a large red circle around the option "Create One" next to the Environment option."](./readme-images/postman-configure-new-environment.png)
-1. In the "Enter Value" checkbox, enter the value you saved from the Emarsys API user creation screen. Do this for Client ID and Client Secret. The text for each will turn from red to blue once it's configured correctly
-    1. ***NOTE*** If you are using [SAP Cloud Identities](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials#openid-connect-sap-cloud-identity) to manage your Emarsys API credentials, you will need to replace the Access Token URL as well
-1. Scroll to the bottom of the window and click the Orange "Get New Access Token" button. Postman will take a moment to make sure your credentials work, then report it was successful. Click "Proceed" on this window, then click "Use Token"
-1. Your credentials are now configured!
 
-
-## Selecting an API endpoint (data center)
+## Selecting an Emarsys API instance
 
 Every request URL in this collection points at the variable `{{apiHost}}` instead of a hardcoded hostname. To switch between data centers, import one of the ready-made environment files from the `postman/environments/` folder:
 
