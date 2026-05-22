@@ -1,13 +1,23 @@
 # Emarsys API Developer tooling
-**Written in the Postman format and tested with Bruno**
+**Available in Postman and Bruno formats**
 
 This document describes the Emarsys Suite API v3, which uses OpenID Connect (OAuth 2.0 client credentials grant) authentication. 
 
 - Other API collections, including the Emarsys suite WSSE APIs: [link](./wsse_APIs/)
-- Introduction to Emarsys API: [link](https://help.emarsys.com/hc/en-us/articles/115004745889-API-Introduction-to-the-Emarsys-API)
-- Creating your API credentials: [link](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials)
+- Introduction to Emarsys API: [link](https://help.sap.com/docs/SAP_EMARSYS/5d44574160f44536b0130abf58cb87cc/fdf6023c74c11014b724bbfdb6028c98.html?locale=en-US)
+- Setting up API credentials: [link](https://help.sap.com/docs/SAP_EMARSYS/5d44574160f44536b0130abf58cb87cc/fdf4b58974c110149353957a3e7ef453.html?locale=en-US)
 
-### For an open source alternative to Postman, this collection is also compatible with Bruno, as described [here](#Using-this-collection-with-Bruno).
+---
+
+### Quick links
+| | |
+|---|---|
+| 🔑 | [Creating your API user](#creating-your-api-user) |
+| 🟠 | [Using with Bruno](#using-with-bruno) |
+| 📮 | [Using with Postman](#using-with-postman) |
+| 🌐 | [Selecting an API endpoint](#selecting-an-api-endpoint-data-center) |
+
+---
 
 ## Creating your API user
 
@@ -17,20 +27,57 @@ To create your API user, follow [this documentation guide for OpenID Connect](ht
 > Be sure to copy your all of the credential details from the gray text boxes to a secure location immediately, as you won't be able to access them again!
 
 
+## Using with Bruno
+
+[Bruno](https://docs.usebruno.com/) is an open-source API tool that is fully free to use and is supported by the Open-Source community. This collection ships with a native Bruno format that includes pre-configured OAuth2 settings.
+
+### Setting up the Bruno collection
+
+The Bruno collection is generated locally from the Postman source.
+
+Prerequisites:
+- [Bruno](https://www.usebruno.com/downloads) — the API client
+- [mise](https://mise.jdx.dev/) — task runner (`brew install mise` on macOS, or see [install docs](https://mise.jdx.dev/getting-started.html))
+- [Node.js](https://nodejs.org/) — if not already installed, mise will install it automatically
+
+Steps:
+1. Clone or download this repository
+1. Run the setup task:
+    ```bash
+    mise run setup-bruno
+    ```
+    This generates the `bruno/` folder with all requests, environments, and pre-configured OAuth2 settings. It also creates `.env.<environment>` files where you can store your credentials.
+
+1. Fill in your `OIDC_ClientId` and `OIDC_Secret` in the appropriate `.env.*` file(s) under `bruno/`:
+    - `.env.Emarsys EU Production`
+    - `.env.Emarsys EU Staging`
+    - `.env.Emarsys US1 Production`
+    - `.env.Emarsys US1 Staging`
+
+1. Open Bruno and click **"Open Collection"**, then select the `bruno/` directory
+
+1. Select the environment matching your emarsys suite instance from the environment dropdown in Bruno's sidebar 
+
+> [!NOTE]
+> If you are using [SAP Cloud Identities](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials#openid-connect-sap-cloud-identity) to manage your Emarsys API credentials, you will need to update the `OIDC_TokenUrl` variable in the Bruno environment settings.
+
+> [!TIP]
+> You can re-run `mise run setup-bruno` at any time to update the collection from the Postman source. Your `.env.*` files with credentials will be preserved.
+
+
 ## Using with Postman
 
 ### Installing the collection in Postman
 1. First, make sure you have Postman installed. These collections are meant to be used with the program Postman, which can be downloaded here: https://www.postman.com/downloads/
-1. Download this repository by clicking on the Green "Code" button at the top of this page, then "Download Zip":
+2. Download this repository by clicking on the Green "Code" button at the top of this page, then "Download Zip":
   ![Graphic displaying the location of the "code" and "download ZIP" buttons on the current github page](./readme-images/github-download-steps.png)
 3. Extract the files from the .zip folder
 4. With Postman installed and the collections downloaded, click on the import button in the top-left:
   ![Postman import button](./readme-images/import-button.png)
-1. Select The upload files option:
+5. Select The upload files option:
     ![Postman upload files option](./readme-images/upload-files-button.png)
-1. Select the file "Emarsys Postman Collection" from the downloaded files
-    ![Postman file selector with "Emarsys Postman Collection" highlighted](./readme-images/file-selector-oauth.png)
-1. Finally, select the import button to confirm and the package will be fully installed!
+6. Select the file `postman/Emarsys_postman_collection.json` from the downloaded files
+7. Finally, select the import button to confirm and the package will be fully installed!
  
 ### Setting up your API user in Postman
 
@@ -46,53 +93,21 @@ To create your API user, follow [this documentation guide for OpenID Connect](ht
 1. Your credentials are now configured!
 
 
-# Using this collection with Bruno
+## Selecting an API endpoint (data center)
 
-[Bruno](https://docs.usebruno.com/) is an open-source API tool that is very similar to Postman, but is fully free to use and is supported by the Open-Source community.
+Every request URL in this collection points at the variable `{{apiHost}}` instead of a hardcoded hostname. To switch between data centers, import one of the ready-made environment files from the `postman/environments/` folder:
 
-### Installing the collection in Bruno
+| File                                    | Data center   | Host                                 |
+| --------------------------------------- | ------------- | ------------------------------------ |
+| `EU-Production.environment.json`        | EU Production | `api.emarsys.net`                    |
+| `EU-Staging.environment.json`           | EU Staging    | `api-proxy.s.emarsys.com`            |
+| `US1-Production.environment.json`       | US Production | `us1-01.api.cloud.sap.emarsys.net`   |
+| `US1-Staging.environment.json`          | US Staging    | `us1-01.api.s.sap.emarsys.com`       |
 
-1. Make sure you have Bruno installed. You can download Bruno here: https://www.usebruno.com/downloads
-1. Download this repository by clicking on the Green "Code" button at the top of this page, then "Download Zip":
+**Postman:** click the gear icon (Manage Environments) → Import → pick the file. Then choose the environment from the dropdown in the top-right of the Postman window.
 
-    ![Graphic displaying the location of the "code" and "download ZIP" buttons on the current github page](./readme-images/github-download-steps.png)
+**Bruno:** the `bruno/environments/` folder already contains these environments in Bruno format. Select the appropriate one from the environment dropdown in Bruno's sidebar.
 
-1. Extract the files from the .zip folder
-1. With Bruno downloaded and the collections downloaded, click on the Import Collection button:
+If no environment is selected, the collection falls back to its built-in default of `api.emarsys.net` (EU Production).
 
-    ![Graphic displaying the location of the "Import Collection" button in Bruno's UI](./readme-images/bruno-import-button.png)
 
-1. Select "Postman Collection" for the collection type
-1. Select the file "Emarsys_postman_collection.json" from the files you downloaded previously and press open:
-
-    ![Graphic displaying the file selector for importing Postman collection files into Bruno](./readme-images/bruno-file-selector.png)
-
-1. Bruno will then ask you where you'd like to save the imported collection. Select any location on your computer you would like to store your work in Bruno. A good option may be your Documents folder, or a project folder where you keep your work on Emarsys. After you do so, the API collection will be visible in Bruno.
-
-1. Begin setting up your authentication to the API by clicking on the name of the collection in the left-hand menu and then selecting the tab "Auth". In that page, apply the following settings:
-
-    - Set the "Grant Type" dropdown to "Client Credentials"
-    - Set the Access Token URL to "https://auth.emarsys.net/oauth2/token"
-    - Set the Client ID to {{OIDC_CLIENT_ID}}
-    - Set the Client Secret to {{OIDC_SECRET}}
-    - Set the "Add Credentials to" dropdown to "Basic Auth Header"
-    - Lower down, in the Settings section, check the box for "Automatically fetch token if not found"
-    - Click "Get Access Token" to test the settings
-    - Click Save
-
-    ![Graphic displaying the Auth settings page for Bruno to configure Oauth](./readme-images/bruno-configuring-auth-page.png)
-
-1. Bruno is now configured and ready for you to fill in your API credentials. Follow the steps for configuring your environments in the next section before sending your first request
-
-### Setting up your API user in Bruno
-
-This collection uses Bruno Environment Variables to manage the credentials for the account(s) you work with.
-![A sample of a fully-configured Bruno Environment, with variables OIDC_CLIENT_ID and OIDC_SECRET set](./readme-images/bruno-sample-oauth-environment-config.png)
-[This guide goes over how to create those environments](https://docs.usebruno.com/secrets-management/secret-variables)
-
-The required variables are:
-- OIDC_CLIENT_ID
-- OIDC_SECRET
-
-> [!NOTE]
-> If you are using [SAP Cloud Identities](https://help.emarsys.com/hc/en-us/articles/22036625729554-Security-settings-API-Credentials#openid-connect-sap-cloud-identity) to manage your Emarsys API credentials, you will need to add your Access Token URL in the variable "OIDC_SCI_HOST"

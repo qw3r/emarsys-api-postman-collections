@@ -1,0 +1,10 @@
+[tasks.setup-bruno]
+description = "Generate Bruno collection from Postman source"
+run = """
+if ! command -v node &> /dev/null; then
+  echo "Node.js not found, installing via mise..."
+  mise use node@lts
+fi
+npm install --silent
+node scripts/postman-to-bruno.js
+"""
