@@ -95,16 +95,37 @@ function processItems(items, outputDir) {
 }
 
 function convertEnvironments() {
-  const envSource = path.join(REPO_ROOT, "postman", "environments");
   const envDest = path.join(BRUNO_DIR, "environments");
   fs.mkdirSync(envDest, { recursive: true });
 
   const secretKeys = ["OIDC_ClientId", "OIDC_Secret"];
 
-  for (const file of fs.readdirSync(envSource)) {
-    if (!file.endsWith(".json")) continue;
-    const envData = JSON.parse(fs.readFileSync(path.join(envSource, file), "utf8"));
-    const name = envData.name || path.basename(file, ".json");
+  // Collect environment files from multiple sources
+  const envFiles = [];
+
+  // 1. Public environments
+  const publicEnvDir = path.join(REPO_ROOT, "postman", "environments");
+  if (fs.existsSync(publicEnvDir)) {
+    for (const file of fs.readdirSync(publicEnvDir)) {
+      if (file.endsWith(".environment.json")) {
+        envFiles.push(path.join(publicEnvDir, file));
+      }
+    }
+  }
+
+  // 2. Private environments (submodule)
+  const privateDir = path.join(REPO_ROOT, "postman", "environments-private");
+  if (fs.existsSync(privateDir)) {
+    for (const file of fs.readdirSync(privateDir)) {
+      if (file.endsWith(".environment.json")) {
+        envFiles.push(path.join(privateDir, file));
+      }
+    }
+  }
+
+  for (const filePath of envFiles) {
+    const envData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const name = envData.name || path.basename(filePath, ".environment.json");
     const values = envData.values || [];
 
     const env = { name, variables: [] };

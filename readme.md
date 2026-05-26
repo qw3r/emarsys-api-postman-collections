@@ -88,18 +88,28 @@ Steps:
 
 ## Selecting an Emarsys API instance
 
-Every request URL in this collection points at the variable `{{apiHost}}` instead of a hardcoded hostname. To switch between data centers, import one of the ready-made environment files from the `postman/environments/` folder:
+Every request URL in this collection points at the variable `{{apiHost}}` instead of a hardcoded hostname. To switch between data centers, use the appropriate environment file.
+
+### Public environment
 
 | File                                    | Data center   | Host                                 |
 | --------------------------------------- | ------------- | ------------------------------------ |
-| `EU-Production.environment.json`        | EU Production | `api.emarsys.net`                    |
-| `EU-Staging.environment.json`           | EU Staging    | `api-proxy.s.emarsys.com`            |
-| `US1-Production.environment.json`       | US Production | `us1-01.api.cloud.sap.emarsys.net`   |
-| `US1-Staging.environment.json`          | US Staging    | `us1-01.api.s.sap.emarsys.com`       |
+| `postman/environments/EU-Production.environment.json` | EU Production | `api.emarsys.net`                    |
 
-**Postman:** click the gear icon (Manage Environments) → Import → pick the file. Then choose the environment from the dropdown in the top-right of the Postman window.
+### Internal environments (private submodule)
 
-**Bruno:** the `bruno/environments/` folder already contains these environments in Bruno format. Select the appropriate one from the environment dropdown in Bruno's sidebar.
+Additional environments (EU Staging, US Production, US Staging) are in a private Git submodule at `postman/environments-private/`. To access them:
+
+```bash
+git submodule update --init
+```
+
+> [!NOTE]
+> This requires access to the [private environments repository](https://github.com/emartech/emarsys-api-environments-private). Contact your team lead if you need access.
+
+**Postman:** click the gear icon (Manage Environments) → Import → pick the environment file. Then choose the environment from the dropdown in the top-right of the Postman window.
+
+**Bruno:** run `mise run setup-bruno` after initializing the submodule. The environments will appear in Bruno's environment dropdown.
 
 If no environment is selected, the collection falls back to its built-in default of `api.emarsys.net` (EU Production).
 

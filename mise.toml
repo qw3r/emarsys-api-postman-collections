@@ -5,6 +5,15 @@ if ! command -v node &> /dev/null; then
   echo "Node.js not found, installing via mise..."
   mise use node@lts
 fi
+
+# Try to clone/update private environments submodule (requires access)
+if git ls-remote git@github.com:emartech/emarsys-api-environments-private.git &>/dev/null; then
+  echo "Access to private environments confirmed, updating submodule..."
+  git submodule update --init postman/environments-private
+else
+  echo "No access to private environments repo (skipping — only public environments will be available)"
+fi
+
 npm install --silent
 node scripts/postman-to-bruno.js
 """
