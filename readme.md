@@ -1,5 +1,6 @@
 # Emarsys API Developer tooling
 **Available in Postman and Bruno formats**
+**Written in the Postman format and tested with Bruno**
 
 This document describes the Emarsys Suite API v3, which uses OpenID Connect (OAuth 2.0 client credentials grant) authentication. 
 
