@@ -18,7 +18,8 @@
     "url": "https://github.com/qw3r/emarsys-api-collections/issues"
   },
   "homepage": "https://github.com/qw3r/emarsys-api-collections#readme",
-  "dependencies": {
+  "devDependencies": {
+    "@usebruno/converters": "0.20.0",
     "yaml": "2.9.0"
   }
 }

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /**
  * Convert Emarsys Postman collection to Bruno v3 opencollection format.
+ * Uses @usebruno/converters for the heavy lifting.
  */
 
 const fs = require("fs");
 const path = require("path");
 const YAML = require("yaml");
+const { postmanToBruno, brunoToOpenCollection } = require("@usebruno/converters");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const POSTMAN_FILE = path.join(REPO_ROOT, "postman", "Emarsys_postman_collection.json");
@@ -15,81 +17,26 @@ function sanitize(name) {
   return name.replace(/[<>:"/\\|?*]/g, "").trim();
 }
 
-function getUrl(urlObj) {
-  if (typeof urlObj === "string") return urlObj;
-  return urlObj?.raw || "";
-}
+function writeItems(items, outputDir) {
+  for (const item of items) {
+    const name = sanitize(item.info?.name || "Untitled");
 
-function getQueryParams(urlObj) {
-  if (typeof urlObj === "string") return [];
-  return urlObj?.query || [];
-}
-
-function renderRequest(item, seq) {
-  const req = item.request || {};
-  const method = (req.method || "GET").toUpperCase();
-  const url = getUrl(req.url);
-  const bodyMode = req.body?.mode || null;
-  const rawBody = req.body?.raw || "";
-  const description = req.description || "";
-  const headers = req.header || [];
-  const params = getQueryParams(req.url);
-
-  const doc = { info: { name: item.name, type: "http", seq } };
-
-  const http = { method, url };
-
-  if (headers.length > 0) {
-    http.headers = headers.map((h) => {
-      const entry = { name: h.key, value: h.value || "" };
-      if (h.disabled) entry.disabled = true;
-      return entry;
-    });
-  }
-
-  if (params.length > 0) {
-    http.params = params.map((p) => {
-      const entry = { name: p.key, value: String(p.value || ""), type: "query" };
-      if (p.description) entry.description = p.description;
-      if (p.disabled) entry.disabled = true;
-      return entry;
-    });
-  }
-
-  if (bodyMode === "raw" && rawBody) {
-    http.body = { type: "json", data: rawBody };
-  } else if (bodyMode === "raw") {
-    http.body = { type: "json", data: "" };
-  }
-
-  http.auth = "inherit";
-  doc.http = http;
-
-  doc.settings = {
-    encodeUrl: true,
-    timeout: 0,
-    followRedirects: true,
-    maxRedirects: 5,
-  };
-
-  if (description) {
-    doc.docs = description;
-  }
-
-  return YAML.stringify(doc, { lineWidth: 0 });
-}
-
-function processItems(items, outputDir) {
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.item) {
-      const folderName = sanitize(item.name);
-      const folderDir = path.join(outputDir, folderName);
+    if (item.items) {
+      // Folder — create directory and write folder.yml + children
+      const folderDir = path.join(outputDir, name);
       fs.mkdirSync(folderDir, { recursive: true });
-      processItems(item.item, folderDir);
+
+      // folder.yml with folder metadata (without nested items)
+      const folderDoc = {};
+      if (item.info) folderDoc.info = item.info;
+      if (item.request) folderDoc.request = item.request;
+      fs.writeFileSync(path.join(folderDir, "folder.yml"), YAML.stringify(folderDoc, { lineWidth: 0 }));
+
+      writeItems(item.items, folderDir);
     } else {
-      const filename = sanitize(item.name) + ".yml";
-      fs.writeFileSync(path.join(outputDir, filename), renderRequest(item, i + 1));
+      // Request — write as individual .yml file
+      const doc = { ...item };
+      fs.writeFileSync(path.join(outputDir, name + ".yml"), YAML.stringify(doc, { lineWidth: 0 }));
     }
   }
 }
@@ -99,11 +46,8 @@ function convertEnvironments() {
   fs.mkdirSync(envDest, { recursive: true });
 
   const secretKeys = ["OIDC_ClientId", "OIDC_Secret"];
-
-  // Collect environment files from multiple sources
   const envFiles = [];
 
-  // 1. Public environments
   const publicEnvDir = path.join(REPO_ROOT, "postman", "environments");
   if (fs.existsSync(publicEnvDir)) {
     for (const file of fs.readdirSync(publicEnvDir)) {
@@ -113,7 +57,6 @@ function convertEnvironments() {
     }
   }
 
-  // 2. Private environments (submodule)
   const privateDir = path.join(REPO_ROOT, "postman", "environments-private");
   if (fs.existsSync(privateDir)) {
     for (const file of fs.readdirSync(privateDir)) {
@@ -141,71 +84,65 @@ function convertEnvironments() {
   }
 }
 
-// Main
-console.log(`Converting ${path.basename(POSTMAN_FILE)} to Bruno v3 opencollection format...`);
+async function main() {
+  console.log(`Converting ${path.basename(POSTMAN_FILE)} to Bruno v3 opencollection format...`);
 
-const collection = JSON.parse(fs.readFileSync(POSTMAN_FILE, "utf8"));
+  const collection = JSON.parse(fs.readFileSync(POSTMAN_FILE, "utf8"));
 
-// Clean and create output
-if (fs.existsSync(BRUNO_DIR)) {
-  fs.rmSync(BRUNO_DIR, { recursive: true, force: true });
+  // Clean and create output
+  if (fs.existsSync(BRUNO_DIR)) {
+    fs.rmSync(BRUNO_DIR, { recursive: true, force: true });
+  }
+  fs.mkdirSync(BRUNO_DIR, { recursive: true });
+
+  // Step 1: Convert Postman → Bruno internal format
+  const brunoCollection = await postmanToBruno(collection);
+
+  // Step 2: Convert Bruno internal → OpenCollection structure
+  const oc = brunoToOpenCollection(brunoCollection);
+
+  // Step 3: Patch token settings
+  if (oc.request?.auth) {
+    oc.request.auth.tokenConfig = {
+      id: "credential",
+      placement: { header: "Bearer" },
+      source: "access_token",
+    };
+    oc.request.auth.settings = {
+      autoFetchToken: true,
+      autoRefreshToken: false,
+    };
+  }
+
+  // Step 4: Write items as separate files, remove from opencollection.yml
+  const items = oc.items || [];
+  delete oc.items;
+  oc.bundled = false;
+
+  // Write opencollection.yml (collection-level only, no items)
+  fs.writeFileSync(
+    path.join(BRUNO_DIR, "opencollection.yml"),
+    YAML.stringify(oc, { lineWidth: 0 })
+  );
+  console.log("  Created: opencollection.yml");
+
+  // Write request files
+  writeItems(items, BRUNO_DIR);
+  console.log("  Processed request folders");
+
+  // Environments
+  convertEnvironments();
+
+  // .gitignore
+  fs.writeFileSync(
+    path.join(BRUNO_DIR, ".gitignore"),
+    "# Generated — do not commit\n*\n!.gitkeep\n"
+  );
+
+  console.log(`\nDone! Bruno collection written to: bruno/`);
 }
-fs.mkdirSync(BRUNO_DIR, { recursive: true });
 
-// opencollection.yml
-const opencollectionDoc = {
-  opencollection: "1.0.0",
-  info: { name: collection.info.name },
-  request: {
-    auth: {
-      type: "oauth2",
-      flow: "client_credentials",
-      accessTokenUrl: "{{OIDC_TokenUrl}}",
-      credentials: {
-        clientId: "{{OIDC_ClientId}}",
-        clientSecret: "{{OIDC_Secret}}",
-        placement: "basic_auth_header",
-      },
-      tokenConfig: {
-        id: "credential",
-        placement: { header: "Bearer" },
-        source: "access_token",
-      },
-      settings: {
-        autoFetchToken: true,
-        autoRefreshToken: false,
-      },
-    },
-    variables: [{ name: "apiHost", value: "api.emarsys.net" }],
-  },
-  docs: {
-    content: collection.info.description || "",
-    type: "text/markdown",
-  },
-  bundled: false,
-  extensions: {
-    bruno: {
-      ignore: ["node_modules", ".git"],
-    },
-  },
-};
-fs.writeFileSync(
-  path.join(BRUNO_DIR, "opencollection.yml"),
-  YAML.stringify(opencollectionDoc, { lineWidth: 0 })
-);
-console.log("  Created: opencollection.yml");
-
-// Process requests
-processItems(collection.item, BRUNO_DIR);
-console.log("  Processed request folders");
-
-// Environments
-convertEnvironments();
-
-// .gitignore
-fs.writeFileSync(
-  path.join(BRUNO_DIR, ".gitignore"),
-  "# Generated — do not commit\n*\n!.gitkeep\n"
-);
-
-console.log(`\nDone! Bruno collection written to: bruno/`);
+main().catch((err) => {
+  console.error("Error:", err.message);
+  process.exit(1);
+});
